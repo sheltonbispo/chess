@@ -7,10 +7,18 @@ services:
       - .:/app
     env_file:
       - .env
+    depends_on:
+      - db
   
   db:
     image: postgres:latest
-    environment:
-      POSTGRES_USER: chess
-      POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: chessdb
+    env_file:
+      - .env
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules

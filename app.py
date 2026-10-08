@@ -27,7 +27,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             senha VARCHAR(100) NOT NULL,
-            email VARCHAR(150) UNIQUE NOT NULL
+            email VARCHAR(150) UNIQUE NOT NULL,
+            nome VARCHAR(150) NOT NULL
         )
     """)
 
@@ -64,7 +65,7 @@ def insert_user():
 
     return jsonify({"id": user_id, "name": data["name"], "email": data["email"]})
 
-@app.route('/login_submit', methods=['POST'])
+@app.route('/login', methods=['POST'])
 def login():
     request_data = request.get_json()
 
@@ -73,9 +74,10 @@ def login():
             try:
                 cursor.execute("""
                     SELECT senha FROM users WHERE email=%s
-                """, request_data["email"])
+                """, (request_data["email"],))
                 db_data = cursor.fetchall()
-            except:
+            except Exception as e:
+                print(e)
                 db_data = False
 
         if not db_data:
@@ -93,9 +95,28 @@ def login():
             "email": request_data["email"]
         })
 
-@app.route('/login', methods=['GET'])
-def login_page():
-    return  
+@app.route('/cadastro', methods=['POST'])
+def cadastro():
+    request_data = request.get_json()
+
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            try:
+                cursor.execute("""
+                    INSERT INTO users (nome, email, senha) VALUES (%s, %s, %s)
+                    """,
+                    (request_data['nome'], request_data['email'], request_data['senha'])
+                )
+                conn.commit()
+            except:
+                return jsonify({
+                    'status': 'failed',
+                    'error_message': 'database_error'
+                })
+    return jsonify({
+        'status': 'success'
+    })
+
 
 if __name__ == '__main__':
     init_db()
